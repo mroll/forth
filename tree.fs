@@ -7,23 +7,24 @@
 )
 
 : NODE  HERE 24 ALLOT DUP DUP 24 0 FILL ROT SWAP ! ; ( n -- adr )
+: NULL?   @ 0= ; ( r_adr -- )
 : LCHILD   8 + ; ( n_adr -- lc_adr )
 : RCHILD   16 + ; ( n_adr -- rc_adr )
-: NINSERT   RECURSIVE DUP @ 0= IF ! ELSE
+: NINSERT   RECURSIVE DUP NULL? IF ! ELSE
                 2DUP @ @ SWAP @ > IF @ LCHILD NINSERT ELSE
                 @ RCHILD NINSERT THEN THEN ; ( n_adr r_adr -- )
 
-: NSEARCH   RECURSIVE DUP @ 0= IF DROP DROP 0 ELSE
+: NSEARCH   RECURSIVE DUP NULL? IF DROP DROP 0 ELSE
                 2DUP @ @ = IF 1 ELSE
                 2DUP @ @ < IF @ LCHILD NSEARCH ELSE
                 @ RCHILD NSEARCH THEN THEN THEN ; ( n r_adr -- f )
 
-: NFIND   RECURSIVE DUP @ 0= IF DROP DROP 0 ELSE
+: NFIND   RECURSIVE DUP NULL? IF DROP DROP 0 ELSE
                 2DUP @ @ = IF @ ELSE
                 2DUP @ @ < IF @ LCHILD NFIND ELSE
                 @ RCHILD NFIND THEN THEN THEN ; ( n r_adr -- n_adr [0 if not found] )
 
-: PRETRAVERSE   RECURSIVE DUP @ 0= IF DROP DROP ELSE
+: PRETRAVERSE   RECURSIVE DUP NULL? IF DROP DROP ELSE
                     2DUP @ SWAP EXECUTE 2DUP @ LCHILD PRETRAVERSE @ RCHILD PRETRAVERSE THEN ; ( c_adr r_adr -- )
 
 : NPRINT   @ . CR ; ( n_adr -- )
