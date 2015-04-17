@@ -88,4 +88,4 @@ NROOT PREORDER
 NROOT HEIGHT
 .S CR
 
-( This prints out a balanced search tree with 7 nodes and leaves a clean stack :)
+( This prints out a balanced search tree with 7 nodes and height 2 and leaves a clean stack :)
