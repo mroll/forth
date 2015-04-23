@@ -7,9 +7,11 @@
     c_adr - code address [for delivery to EXECUTE]
 )
 
-: NODE  HERE 32 ALLOT DUP DUP 32 0 FILL ROT SWAP ! ; ( n -- adr )
+: NODE  HERE 40 ALLOT DUP DUP 40 0 FILL ROT SWAP ! ; ( n -- adr )
 
 : NULL?   @ 0= ; ( r_adr -- )
+
+: XNULL? @ 0= 0= ;
 
 : LCHILD   8 + ; ( n_adr -- lc_adr )
 
@@ -21,17 +23,19 @@
 
 : +LVL  DUP LVL 1+ SWAP SET_LVL ; ( n_adr -- )
 
-: SAVE   HERE 1 ALLOT TUCK ! ; ( n_adr -- 'n_adr )
+: PTR   HERE 1 ALLOT ; ( -- ptr )
+
+: SAVE   PTR TUCK ! ; ( n_adr -- 'n_adr )
 
 : RROTATE   DUP @ SAVE SWAP DUP DUP @ LCHILD @ SWAP ! @ 2DUP RCHILD @ SWAP @ LCHILD ! RCHILD SWAP @ SWAP ! ; ( r_adr -- )
 
 : LROTATE   DUP @ SAVE OVER @ RCHILD @ ROT TUCK ! 2DUP @ LCHILD @ SWAP @ RCHILD ! TUCK @ LCHILD SWAP @ SWAP ! @ +LVL ; ( r_adr -- )
 
-: HAS_LC   LCHILD @ 0= IF 0 ELSE 1 THEN ; ( n_adr -- f )
+: HAS_LC   LCHILD @ 0= 0= ; ( n_adr -- f )
 
-: HAS_RC   RCHILD @ 0= IF 0 ELSE 1 THEN ; ( n_adr -- f )
+: HAS_RC   RCHILD @ 0= 0= ; ( n_adr -- f )
 
-: NOT0   1 * ; ( n -- f )
+: NOT0   0= 0= ; ( n -- f )
 
 : SKEW   RECURSIVE DUP @ LVL NOT0 IF DUP DUP @ DUP HAS_LC IF LVL SWAP @ LCHILD @ LVL = IF DUP RROTATE ELSE
                 THEN @ RCHILD SKEW ELSE DROP DROP DROP THEN ELSE
@@ -47,9 +51,32 @@
 : HEIGHT   RECURSIVE DUP NULL? IF DROP -1 ELSE
                 DUP 1 SWAP @ RCHILD HEIGHT + SWAP 1 SWAP @ LCHILD HEIGHT + MAX THEN ; ( r_adr -- h )
 
-: BALINSERT   RECURSIVE DUP NULL? IF SWAP DUP 1 SWAP SET_LVL SWAP ! ELSE
-                2DUP @ @ SWAP @ > IF TUCK TUCK @ LCHILD BALINSERT ELSE
-                TUCK TUCK @ RCHILD BALINSERT THEN SKEW SPLIT THEN  ; ( n_adr r_adr -- )
+: AINSERT   RECURSIVE DUP NULL? IF SWAP DUP 1 SWAP SET_LVL SWAP ! ELSE
+                2DUP @ @ SWAP @ > IF TUCK TUCK @ LCHILD AINSERT ELSE
+                TUCK TUCK @ RCHILD AINSERT THEN SKEW SPLIT THEN ; ( n_adr r_adr -- )
+
+: ADELETE   RECURSIVE DUP XNULL?
+                                IF 2DUP @ @ =
+                                    IF DUP DUP @ LCHILD NULL? SWAP @ RCHILD NULL? + 0=
+                                        IF DUP @ LCHILD @ SAVE
+                                            BEGIN
+                                                DUP @ RCHILD XNULL?
+                                                IF DUP DUP @ RCHILD @ SWAP ! 0
+                                                ELSE 1
+                                                THEN
+                                            UNTIL ROT DROP @ @ OVER @ ! DUP @ @ SWAP @ LCHILD ADELETE
+                                        ELSE DUP @ HAS_LC
+                                            IF SWAP DROP DUP @ LCHILD @ SWAP !
+                                            ELSE SWAP DROP DUP @ RCHILD @ SWAP !
+                                            THEN
+                                        THEN
+                                    ELSE 2DUP @ @ <
+                                        IF @ LCHILD
+                                        ELSE @ RCHILD
+                                        THEN ADELETE
+                                    THEN
+                                 THEN ; ( n r_adr -- )
+
 
 : NSEARCH   RECURSIVE DUP NULL? IF DROP DROP 0 ELSE
                 2DUP @ @ = IF 1 ELSE
@@ -74,18 +101,18 @@ VARIABLE 'PT
 
 : PREORDER   PT SWAP PRETRAVERSE ; ( r_adr -- )
 
-
 VARIABLE NROOT
-
-1 NODE NROOT BALINSERT
-2 NODE NROOT BALINSERT
-3 NODE NROOT BALINSERT
-4 NODE NROOT BALINSERT
-5 NODE NROOT BALINSERT
-6 NODE NROOT BALINSERT
-7 NODE NROOT BALINSERT
+1 NODE NROOT AINSERT
+2 NODE NROOT AINSERT
+3 NODE NROOT AINSERT
+4 NODE NROOT AINSERT
+5 NODE NROOT AINSERT
 NROOT PREORDER
-NROOT HEIGHT
-.S CR
 
-( This prints out a balanced search tree with 7 nodes and height 2 and leaves a clean stack :)
+2 NROOT ADELETE
+CR
+NROOT PREORDER
+4 NROOT ADELETE
+CR
+NROOT PREORDER
+.S CR
